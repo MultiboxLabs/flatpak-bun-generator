@@ -1,3 +1,4 @@
+#!/usr/bin/env bun
 import { readFileSync, writeFileSync } from "fs";
 import { base64ToHex, splitOnce, stripJsoncTrailingCommas } from "./utils.ts";
 import { bunCacheVersion } from "./wyhash.ts";
@@ -624,7 +625,7 @@ if (import.meta.main || process.argv[1]?.endsWith("main.ts")) {
   const lockPath = args.find((a) => !a.startsWith("--"));
   if (!lockPath) {
     console.error(
-      "Usage: bun run src/main.ts <path-to-bun.lock> [--output <file>] [--all-os] [--no-devel] [--registry <url>]"
+      "Usage: flatpak-bun-generator <path-to-bun.lock> [--output <file>] [--all-os] [--no-devel] [--registry <url>]"
     );
     process.exit(1);
   }

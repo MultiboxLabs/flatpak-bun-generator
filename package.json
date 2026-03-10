@@ -3,9 +3,19 @@
   "version": "1.0.0",
   "description": "Generate Flatpak sources from bun.lock files",
   "main": "src/main.ts",
+  "bin": {
+    "flatpak-bun-generator": "src/main.ts"
+  },
+  "files": [
+    "src"
+  ],
   "scripts": {
-    "generate": "bun run src/main.ts",
+    "generate": "bun run .",
     "test": "bun test"
   },
-  "license": "MIT"
+  "license": "MIT",
+  "publishConfig": {
+    "provenance": true,
+    "access": "public"
+  }
 }
