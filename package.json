@@ -2,6 +2,13 @@
   "name": "flatpak-bun-generator",
   "version": "0.0.1",
   "description": "Generate Flatpak sources from bun.lock files",
+  "repository": "https://github.com/MultiboxLabs/flatpak-bun-generator",
+  "homepage": "https://github.com/MultiboxLabs/flatpak-bun-generator#readme",
+  "keywords": [
+    "flatpak",
+    "bun",
+    "generator"
+  ],
   "bin": {
     "flatpak-bun-generator": "src/main.ts"
   },
