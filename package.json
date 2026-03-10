@@ -10,16 +10,18 @@
     "generator"
   ],
   "bin": {
-    "flatpak-bun-generator": "src/main.ts"
+    "flatpak-bun-generator": "dist/main.js"
   },
   "engines": {
     "bun": ">=1.0.0"
   },
   "files": [
-    "src"
+    "dist"
   ],
   "scripts": {
+    "build": "rm -rf dist && tsc -p tsconfig.build.json",
     "generate": "bun run .",
+    "prepublishOnly": "bun run build",
     "test": "bun test"
   },
   "license": "MIT",
@@ -30,7 +32,9 @@
   "devDependencies": {
     "@types/bun": "latest"
   },
-  "module": "index.ts",
+  "main": "./dist/main.js",
+  "module": "./dist/main.js",
+  "exports": "./dist/main.js",
   "type": "module",
   "peerDependencies": {
     "typescript": "^5"
