@@ -1,7 +1,7 @@
-#!/usr/bin/env bun
+#!/usr/bin/env node
 import { readFileSync, writeFileSync } from "fs";
-import { base64ToHex, splitOnce, stripJsoncTrailingCommas } from "./utils";
-import { bunCacheVersion } from "./wyhash";
+import { base64ToHex, splitOnce, stripJsoncTrailingCommas } from "./utils.js";
+import { bunCacheVersion } from "./wyhash.js";
 
 export interface BunPackage {
   identifier: string;
@@ -706,7 +706,11 @@ export function parseCliArgs(args: string[]): CliOptions {
   };
 }
 
-if (import.meta.main || process.argv[1]?.endsWith("main.ts")) {
+if (
+  import.meta.main ||
+  process.argv[1]?.endsWith("main.ts") ||
+  process.argv[1]?.endsWith("main.js")
+) {
   const args = process.argv.slice(2);
   let cliOptions: CliOptions;
 
