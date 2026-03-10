@@ -76,4 +76,10 @@ describe("stripJsoncTrailingCommas", () => {
     const result = stripJsoncTrailingCommas(input);
     expect(JSON.parse(result)).toEqual({ a: 1, b: 2 });
   });
+
+  test("does not strip commas inside strings", () => {
+    const input = '{"a": "value,}", "b": ["text,]"]}';
+    const result = stripJsoncTrailingCommas(input);
+    expect(JSON.parse(result)).toEqual({ a: "value,}", b: ["text,]"] });
+  });
 });

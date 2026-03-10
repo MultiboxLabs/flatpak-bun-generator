@@ -10,11 +10,33 @@ const HASH_B = "bSAb7u+1ibCO8GctrII1PQy9mtmeFkLIOhYB89ZHvMoAMle16PMb3B1z++yE+whc
 const HASH_C = "y4ct4rjSUJxUNEQ1zpy0O0+qJ/l9SG/03jWvA+SRn7TsUyZ8r43vBu8XfWn+CrqzwS+9wvJn2JX9B8NqYr/0vw==";
 const HASH_D = "IleqtEtCgTFCqorEdnEWrVvUHpSnmqBnLMliEo7UgJ9Q7TjTW6lFqAeZl2ye+ptobyjRgDYTS8K7CsLeluxigA==";
 const HASH_E = "41Cifkg6e8TylSpdtTpeLVMqvSBEVzTttHvERD741+pnZ8ANv0004MRL43QKPDlK9cGvNp6NZWZUBlbGXYxxng==";
+const originalFetch = globalThis.fetch;
+
+globalThis.fetch = (async (input: string | URL | Request) => {
+  const url = typeof input === "string" ? input : input instanceof URL ? input.toString() : input.url;
+
+  if (url === "https://raw.githubusercontent.com/castlabs/electron-releases/df5ab90/package.json") {
+    return new Response(JSON.stringify({ version: "40.1.0+wvcus" }), {
+      status: 200,
+      headers: { "content-type": "application/json" },
+    });
+  }
+
+  if (
+    url.includes("github.com/") ||
+    url.includes("artifacts.electronjs.org/")
+  ) {
+    return new Response("fixture-data", { status: 200 });
+  }
+
+  return originalFetch(input);
+}) as typeof fetch;
 
 afterAll(() => {
   if (existsSync(TMP_DIR)) {
     rmSync(TMP_DIR, { recursive: true });
   }
+  globalThis.fetch = originalFetch;
 });
 
 describe("main function integration", () => {
@@ -356,6 +378,58 @@ describe("main function integration", () => {
     expect(gitSources[0].sha256).toBeDefined();
     expect(typeof gitSources[0].sha256).toBe("string");
     expect(gitSources[0].sha256.length).toBeGreaterThan(0);
+  });
+
+  test("excludes dev-only git and electron dependencies with --no-devel", async () => {
+    const testDir = join(TMP_DIR, "nodev-git-electron");
+    mkdirSync(testDir, { recursive: true });
+
+    const lockPath = join(testDir, "bun.lock");
+    const outputPath = join(testDir, "bun-sources.json");
+
+    writeFileSync(
+      lockPath,
+      JSON.stringify({
+        lockfileVersion: 1,
+        configVersion: 1,
+        workspaces: {
+          "": {
+            name: "test",
+            dependencies: {
+              "is-number": "7.0.0",
+            },
+            devDependencies: {
+              "electron": "github:castlabs/electron-releases#df5ab90",
+              "node-gyp": "github:electron/node-gyp#06b29aa",
+            },
+          },
+        },
+        packages: {
+          "is-number": [
+            "is-number@7.0.0",
+            "",
+            {},
+            `sha512-${HASH_E}`,
+          ],
+          "node-gyp": [
+            "node-gyp@github:electron/node-gyp#06b29aa",
+            { "dependencies": {} },
+            "electron-node-gyp-06b29aa",
+          ],
+          "electron": [
+            "electron@github:castlabs/electron-releases#df5ab90",
+            { "dependencies": { "@electron/get": "^2.0.0" } },
+            "castlabs-electron-releases-df5ab90",
+          ],
+        },
+      })
+    );
+
+    await main(lockPath, outputPath, { noDev: true });
+
+    const sources = JSON.parse(readFileSync(outputPath, "utf-8"));
+    expect(sources).toHaveLength(1);
+    expect(sources[0]["dest-filename"]).toBe("is-number@7.0.0.tgz");
   });
 
   test("generates electron binary and node headers sources for castlabs dep", async () => {

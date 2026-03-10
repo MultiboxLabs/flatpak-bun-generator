@@ -40,6 +40,14 @@ export interface ElectronInfo {
   commit?: string;
 }
 
+export interface CliOptions {
+  lockPath: string;
+  outputPath: string;
+  allOs: boolean;
+  noDev: boolean;
+  registry: string;
+}
+
 export function parseBunLockfile(text: string): {
   lockfileVersion: number;
   packages: Record<string, any[]>;
@@ -255,7 +263,6 @@ export function collectDevDependencyNames(
   workspaces: Record<string, any>,
   packagesMap: Record<string, any[]>
 ): Set<string> {
-  const devRoots = new Set<string>();
   const prodRoots = new Set<string>();
 
   for (const ws of Object.values(workspaces)) {
@@ -265,9 +272,7 @@ export function collectDevDependencyNames(
       }
     }
     if (ws.devDependencies) {
-      for (const name of Object.keys(ws.devDependencies)) {
-        devRoots.add(name);
-      }
+      // Dev roots are inferred as anything not reachable from prod roots.
     }
     if (ws.optionalDependencies) {
       for (const name of Object.keys(ws.optionalDependencies)) {
@@ -327,6 +332,21 @@ export function collectDevDependencyNames(
   }
 
   return devOnly;
+}
+
+export function filterPackagesMap(
+  packagesMap: Record<string, any[]>,
+  excludedKeys: Set<string>
+): Record<string, any[]> {
+  const filtered: Record<string, any[]> = {};
+
+  for (const [key, value] of Object.entries(packagesMap)) {
+    if (!excludedKeys.has(key)) {
+      filtered[key] = value;
+    }
+  }
+
+  return filtered;
 }
 
 const ELECTRON_ARCHES: { flatpak: string; electron: string }[] = [
@@ -575,8 +595,11 @@ export async function main(
   const devPackageNames = noDev
     ? collectDevDependencyNames(lock.workspaces, lock.packages)
     : new Set<string>();
+  const filteredPackagesMap = noDev
+    ? filterPackagesMap(lock.packages, devPackageNames)
+    : lock.packages;
 
-  const packages = extractPackages(lock.packages, {
+  const packages = extractPackages(filteredPackagesMap, {
     allOs,
     noDev,
     devPackageNames,
@@ -590,7 +613,7 @@ export async function main(
 
   const flatpakSources: FlatpakSource[] = sourceArrays.flat();
 
-  const gitPackages = extractGitPackages(lock.packages);
+  const gitPackages = extractGitPackages(filteredPackagesMap);
   if (gitPackages.length > 0) {
     console.log(
       `Fetching hashes for ${gitPackages.length} git dependencies...`
@@ -609,7 +632,7 @@ export async function main(
     }
   }
 
-  const electronSources = await generateElectronSources(lock.packages);
+  const electronSources = await generateElectronSources(filteredPackagesMap);
   flatpakSources.push(...electronSources);
 
   writeFileSync(outputPath, JSON.stringify(flatpakSources, null, 2) + "\n");
@@ -619,31 +642,89 @@ export async function main(
   );
 }
 
+export function parseCliArgs(args: string[]): CliOptions {
+  let outputPath = "generated-sources.json";
+  let registry = "https://registry.npmjs.org";
+  let allOs = false;
+  let noDev = false;
+  const positional: string[] = [];
+
+  for (let i = 0; i < args.length; i++) {
+    const arg = args[i];
+
+    if (arg === "--output") {
+      const value = args[i + 1];
+      if (!value || value.startsWith("--")) {
+        throw new Error("Missing value for --output");
+      }
+      outputPath = value;
+      i++;
+      continue;
+    }
+
+    if (arg === "--registry") {
+      const value = args[i + 1];
+      if (!value || value.startsWith("--")) {
+        throw new Error("Missing value for --registry");
+      }
+      registry = value;
+      i++;
+      continue;
+    }
+
+    if (arg === "--all-os") {
+      allOs = true;
+      continue;
+    }
+
+    if (arg === "--no-devel") {
+      noDev = true;
+      continue;
+    }
+
+    if (arg.startsWith("--")) {
+      throw new Error(`Unknown option: ${arg}`);
+    }
+
+    positional.push(arg);
+  }
+
+  if (positional.length !== 1) {
+    throw new Error(
+      positional.length === 0
+        ? "Missing lockfile path"
+        : `Unexpected positional arguments: ${positional.slice(1).join(", ")}`
+    );
+  }
+
+  return {
+    lockPath: positional[0],
+    outputPath,
+    allOs,
+    noDev,
+    registry,
+  };
+}
+
 if (import.meta.main || process.argv[1]?.endsWith("main.ts")) {
   const args = process.argv.slice(2);
+  let cliOptions: CliOptions;
 
-  const lockPath = args.find((a) => !a.startsWith("--"));
-  if (!lockPath) {
+  try {
+    cliOptions = parseCliArgs(args);
+  } catch (err: any) {
     console.error(
-      "Usage: flatpak-bun-generator <path-to-bun.lock> [--output <file>] [--all-os] [--no-devel] [--registry <url>]"
+      `Usage: flatpak-bun-generator <path-to-bun.lock> [--output <file>] [--all-os] [--no-devel] [--registry <url>]`
     );
+    console.error(err.message);
     process.exit(1);
   }
 
-  const outputIdx = args.indexOf("--output");
-  const outputPath =
-    outputIdx !== -1 ? args[outputIdx + 1] : "generated-sources.json";
-
-  const allOs = args.includes("--all-os");
-  const noDev = args.includes("--no-devel");
-
-  const registryIdx = args.indexOf("--registry");
-  const registry =
-    registryIdx !== -1
-      ? args[registryIdx + 1]
-      : "https://registry.npmjs.org";
-
-  main(lockPath, outputPath, { allOs, noDev, registry }).catch((err) => {
+  main(cliOptions.lockPath, cliOptions.outputPath, {
+    allOs: cliOptions.allOs,
+    noDev: cliOptions.noDev,
+    registry: cliOptions.registry,
+  }).catch((err) => {
     console.error(err);
     process.exit(1);
   });

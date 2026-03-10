@@ -15,6 +15,8 @@ import {
   electronDownloadDirUrl,
   electronBinaryUrl,
   nodeHeadersUrl,
+  filterPackagesMap,
+  parseCliArgs,
 } from "../src/main.ts";
 import type { ElectronInfo } from "../src/main.ts";
 
@@ -537,6 +539,45 @@ describe("collectDevDependencyNames", () => {
     expect(devOnly.has("express/debug/ms")).toBe(false);
     expect(devOnly.has("typescript")).toBe(true);
     expect(devOnly.has("debug")).toBe(true);
+  });
+});
+
+describe("filterPackagesMap", () => {
+  test("removes excluded package keys", () => {
+    const packagesMap: Record<string, any[]> = {
+      lodash: ["lodash@4.17.23", "", {}, "sha512-a=="],
+      electron: ["electron@33.3.1", "", {}, "sha512-b=="],
+    };
+
+    expect(filterPackagesMap(packagesMap, new Set(["electron"]))).toEqual({
+      lodash: ["lodash@4.17.23", "", {}, "sha512-a=="],
+    });
+  });
+});
+
+describe("parseCliArgs", () => {
+  test("parses lockfile after flags", () => {
+    expect(
+      parseCliArgs(["--output", "out.json", "--registry", "https://registry.example", "bun.lock"])
+    ).toEqual({
+      lockPath: "bun.lock",
+      outputPath: "out.json",
+      allOs: false,
+      noDev: false,
+      registry: "https://registry.example",
+    });
+  });
+
+  test("throws for missing option value", () => {
+    expect(() => parseCliArgs(["bun.lock", "--output"])).toThrow(
+      "Missing value for --output"
+    );
+  });
+
+  test("throws for unknown options", () => {
+    expect(() => parseCliArgs(["bun.lock", "--wat"])).toThrow(
+      "Unknown option: --wat"
+    );
   });
 });
 

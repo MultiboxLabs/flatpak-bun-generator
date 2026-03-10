@@ -27,5 +27,45 @@ export function splitOnce(
 }
 
 export function stripJsoncTrailingCommas(text: string): string {
-  return text.replace(/,\s*([\]}])/g, "$1");
+  let result = "";
+  let inString = false;
+  let escaping = false;
+
+  for (let i = 0; i < text.length; i++) {
+    const char = text[i];
+
+    if (inString) {
+      result += char;
+      if (escaping) {
+        escaping = false;
+      } else if (char === "\\") {
+        escaping = true;
+      } else if (char === "\"") {
+        inString = false;
+      }
+      continue;
+    }
+
+    if (char === "\"") {
+      inString = true;
+      result += char;
+      continue;
+    }
+
+    if (char === ",") {
+      let lookahead = i + 1;
+      while (lookahead < text.length && /\s/.test(text[lookahead])) {
+        lookahead++;
+      }
+
+      const nextChar = text[lookahead];
+      if (nextChar === "}" || nextChar === "]") {
+        continue;
+      }
+    }
+
+    result += char;
+  }
+
+  return result;
 }
