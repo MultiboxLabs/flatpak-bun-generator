@@ -1,7 +1,7 @@
 #!/usr/bin/env bun
 import { readFileSync, writeFileSync } from "fs";
-import { base64ToHex, splitOnce, stripJsoncTrailingCommas } from "./utils.ts";
-import { bunCacheVersion } from "./wyhash.ts";
+import { base64ToHex, splitOnce, stripJsoncTrailingCommas } from "./utils";
+import { bunCacheVersion } from "./wyhash";
 
 export interface BunPackage {
   identifier: string;

@@ -1,5 +1,5 @@
 import { describe, expect, test, afterAll } from "bun:test";
-import { main } from "../src/main.ts";
+import { main } from "../src/main";
 import { existsSync, mkdirSync, writeFileSync, readFileSync, rmSync } from "fs";
 import { join } from "path";
 

@@ -17,8 +17,8 @@ import {
   nodeHeadersUrl,
   filterPackagesMap,
   parseCliArgs,
-} from "../src/main.ts";
-import type { ElectronInfo } from "../src/main.ts";
+} from "../src/main";
+import type { ElectronInfo } from "../src/main";
 
 describe("parseIdentifier", () => {
   test("parses regular package", () => {

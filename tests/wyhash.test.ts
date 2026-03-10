@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { wyhash, wyhashHex, extractPreRelease, bunCacheVersion } from "../src/wyhash.ts";
+import { wyhash, wyhashHex, extractPreRelease, bunCacheVersion } from "../src/wyhash";
 
 describe("wyhash", () => {
   test("hashes empty string", () => {

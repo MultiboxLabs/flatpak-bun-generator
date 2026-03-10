@@ -4,7 +4,7 @@ import {
   base64ToHex,
   splitOnce,
   stripJsoncTrailingCommas,
-} from "../src/utils.ts";
+} from "../src/utils";
 
 describe("sha256", () => {
   test("hashes known string correctly", async () => {
