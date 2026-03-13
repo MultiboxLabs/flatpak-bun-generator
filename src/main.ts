@@ -215,8 +215,8 @@ export function npmPkgToFlatpakSources(
     type: "file",
     url: tarballUrl,
     [checksumType]: hexChecksum,
-    dest: "bun_cache",
-    "dest-filename": `${pkg.name.replace("/", "--")}@${cacheVersion}.tgz`,
+    dest: `bun_cache/${pkg.name}@${cacheVersion}@@@1`,
+    "dest-filename": "package.tgz",
   };
 
   if (pkg.cpu) {
@@ -567,6 +567,57 @@ export async function generateElectronSources(
   sources.push(...binarySources);
   for (const src of binarySources) {
     console.log(`    ${src["dest-filename"]} (${src["only-arches"]}) OK`);
+  }
+
+  // If aarch64 binary is missing and we're using a custom electron variant,
+  // fall back to stock electron for aarch64
+  const hasAarch64Binary = binarySources.some(
+    (s) => s["only-arches"]?.includes("aarch64")
+  );
+
+  if (!hasAarch64Binary && info.buildMeta) {
+    console.log(
+      `  aarch64 binary not available, adding stock electron fallback...`
+    );
+
+    const stockInfo: ElectronInfo = {
+      source: "npm",
+      fullVersion: info.baseVersion,
+      baseVersion: info.baseVersion,
+      buildMeta: null,
+      owner: "electron",
+      repo: "electron",
+    };
+
+    // Add stock electron npm package for aarch64 (needed for bun install)
+    const electronNpmUrl = `https://registry.npmjs.org/electron/-/electron-${info.baseVersion}.tgz`;
+    try {
+      const cacheVersion = bunCacheVersion(info.baseVersion);
+      const sha256 = await fetchSha256(electronNpmUrl);
+      sources.push({
+        type: "file",
+        url: electronNpmUrl,
+        sha256,
+        dest: `bun_cache/electron@${cacheVersion}@@@1`,
+        "dest-filename": "package.tgz",
+        "only-arches": ["aarch64"],
+      });
+      console.log(`    electron@${info.baseVersion} npm package (aarch64) OK`);
+    } catch (err: any) {
+      console.warn(
+        `    Failed to fetch stock electron npm package: ${err.message}`
+      );
+    }
+
+    // Add stock electron arm64 binary
+    const stockBinarySources = await electronBinarySources(stockInfo);
+    const arm64Source = stockBinarySources.find((s) =>
+      s["only-arches"]?.includes("aarch64")
+    );
+    if (arm64Source) {
+      sources.push(arm64Source);
+      console.log(`    ${arm64Source["dest-filename"]} (aarch64) OK`);
+    }
   }
 
   console.log(`  Fetching node headers hash...`);

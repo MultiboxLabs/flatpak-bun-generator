@@ -81,8 +81,8 @@ describe("main function integration", () => {
 
     const src = sources[0];
     expect(src.type).toBe("file");
-    expect(src.dest).toBe("bun_cache");
-    expect(src["dest-filename"]).toBe("is-number@7.0.0.tgz");
+    expect(src.dest).toBe("bun_cache/is-number@7.0.0@@@1");
+    expect(src["dest-filename"]).toBe("package.tgz");
     expect(src.url).toBe(
       "https://registry.npmjs.org/is-number/-/is-number-7.0.0.tgz"
     );
@@ -132,7 +132,7 @@ describe("main function integration", () => {
     expect(sources).toHaveLength(2);
 
     const typesNode = sources.find(
-      (s: any) => s["dest-filename"] === "@types--node@22.13.9.tgz"
+      (s: any) => s.dest === "bun_cache/@types/node@22.13.9@@@1"
     );
     expect(typesNode).toBeDefined();
     expect(typesNode.url).toBe(
@@ -140,7 +140,7 @@ describe("main function integration", () => {
     );
 
     const undici = sources.find(
-      (s: any) => s["dest-filename"] === "undici-types@6.20.0.tgz"
+      (s: any) => s.dest === "bun_cache/undici-types@6.20.0@@@1"
     );
     expect(undici).toBeDefined();
   });
@@ -189,8 +189,8 @@ describe("main function integration", () => {
 
     const sources = JSON.parse(readFileSync(outputPath, "utf-8"));
     expect(sources).toHaveLength(1);
-    expect(sources[0].dest).toBe("bun_cache");
-    expect(sources[0]["dest-filename"]).toBe("is-number@7.0.0.tgz");
+    expect(sources[0].dest).toBe("bun_cache/is-number@7.0.0@@@1");
+    expect(sources[0]["dest-filename"]).toBe("package.tgz");
   });
 
   test("includes platform-specific packages with only-arches", async () => {
@@ -229,10 +229,8 @@ describe("main function integration", () => {
     const sources = JSON.parse(readFileSync(outputPath, "utf-8"));
     expect(sources).toHaveLength(1);
     expect(sources[0]["only-arches"]).toEqual(["x86_64"]);
-    expect(sources[0].dest).toBe("bun_cache");
-    expect(sources[0]["dest-filename"]).toBe(
-      "@rollup--rollup-linux-x64-gnu@4.35.0.tgz"
-    );
+    expect(sources[0].dest).toBe("bun_cache/@rollup/rollup-linux-x64-gnu@4.35.0@@@1");
+    expect(sources[0]["dest-filename"]).toBe("package.tgz");
   });
 
   test("uses custom registry URL", async () => {
@@ -311,10 +309,10 @@ describe("main function integration", () => {
     expect(sources).toHaveLength(4);
 
     const debugDests = sources
-      .filter((s: any) => s["dest-filename"]?.includes("debug@"))
-      .map((s: any) => s["dest-filename"]);
-    expect(debugDests).toContain("debug@4.4.3.tgz");
-    expect(debugDests).toContain("debug@2.6.9.tgz");
+      .filter((s: any) => s.dest?.includes("debug@"))
+      .map((s: any) => s.dest);
+    expect(debugDests).toContain("bun_cache/debug@4.4.3@@@1");
+    expect(debugDests).toContain("bun_cache/debug@2.6.9@@@1");
     expect(debugDests).toHaveLength(2);
   });
 
@@ -365,7 +363,8 @@ describe("main function integration", () => {
     const gitSources = sources.filter((s: any) => s.type === "archive");
 
     expect(npmSources).toHaveLength(1);
-    expect(npmSources[0]["dest-filename"]).toBe("is-number@7.0.0.tgz");
+    expect(npmSources[0]["dest-filename"]).toBe("package.tgz");
+    expect(npmSources[0].dest).toBe("bun_cache/is-number@7.0.0@@@1");
 
     expect(gitSources).toHaveLength(1);
     expect(gitSources[0].url).toBe(
@@ -429,7 +428,8 @@ describe("main function integration", () => {
 
     const sources = JSON.parse(readFileSync(outputPath, "utf-8"));
     expect(sources).toHaveLength(1);
-    expect(sources[0]["dest-filename"]).toBe("is-number@7.0.0.tgz");
+    expect(sources[0]["dest-filename"]).toBe("package.tgz");
+    expect(sources[0].dest).toBe("bun_cache/is-number@7.0.0@@@1");
   });
 
   test("generates electron binary and node headers sources for castlabs dep", async () => {
@@ -476,10 +476,10 @@ describe("main function integration", () => {
     const sources = JSON.parse(readFileSync(outputPath, "utf-8"));
 
     const npmSources = sources.filter(
-      (s: any) => s.type === "file" && s.dest === "bun_cache"
+      (s: any) => s.type === "file" && s.dest?.startsWith("bun_cache/")
     );
     expect(npmSources).toHaveLength(1);
-    expect(npmSources[0]["dest-filename"]).toBe("is-number@7.0.0.tgz");
+    expect(npmSources[0].dest).toBe("bun_cache/is-number@7.0.0@@@1");
 
     const gitSources = sources.filter(
       (s: any) => s.type === "archive" && s.dest?.startsWith("bun_cache/")
@@ -573,7 +573,7 @@ describe("main function integration", () => {
     const sources = JSON.parse(readFileSync(outputPath, "utf-8"));
 
     const npmSources = sources.filter(
-      (s: any) => s.type === "file" && s.dest === "bun_cache"
+      (s: any) => s.type === "file" && s.dest?.startsWith("bun_cache/")
     );
     expect(npmSources).toHaveLength(2);
 

@@ -335,8 +335,8 @@ describe("npmPkgToFlatpakSources", () => {
     expect(src.url).toBe(
       "https://registry.npmjs.org/lodash/-/lodash-4.17.23.tgz"
     );
-    expect(src.dest).toBe("bun_cache");
-    expect(src["dest-filename"]).toBe("lodash@4.17.23.tgz");
+    expect(src.dest).toBe("bun_cache/lodash@4.17.23@@@1");
+    expect(src["dest-filename"]).toBe("package.tgz");
     expect(src.sha512).toBeDefined();
   });
 
@@ -359,8 +359,8 @@ describe("npmPkgToFlatpakSources", () => {
     expect(src.url).toBe(
       "https://registry.npmjs.org/@babel/core/-/core-7.29.0.tgz"
     );
-    expect(src.dest).toBe("bun_cache");
-    expect(src["dest-filename"]).toBe("@babel--core@7.29.0.tgz");
+    expect(src.dest).toBe("bun_cache/@babel/core@7.29.0@@@1");
+    expect(src["dest-filename"]).toBe("package.tgz");
   });
 
   test("adds only-arches for CPU-specific packages", () => {
@@ -416,7 +416,8 @@ describe("npmPkgToFlatpakSources", () => {
     expect(src.url).toBe(
       "https://registry.npmjs.org/gensync/-/gensync-1.0.0-beta.2.tgz"
     );
-    expect(src["dest-filename"]).toBe("gensync@1.0.0-4049f5e8f1219d89.tgz");
+    expect(src["dest-filename"]).toBe("package.tgz");
+    expect(src.dest).toBe("bun_cache/gensync@1.0.0-4049f5e8f1219d89@@@1");
   });
 
   test("hashes pre-release version for scoped packages", () => {
@@ -438,7 +439,8 @@ describe("npmPkgToFlatpakSources", () => {
     expect(src.url).toBe(
       "https://registry.npmjs.org/@rolldown/pluginutils/-/pluginutils-1.0.0-rc.3.tgz"
     );
-    expect(src["dest-filename"]).toBe("@rolldown--pluginutils@1.0.0-740e203097086e5e.tgz");
+    expect(src["dest-filename"]).toBe("package.tgz");
+    expect(src.dest).toBe("bun_cache/@rolldown/pluginutils@1.0.0-740e203097086e5e@@@1");
   });
 
   test("does not hash regular versions without pre-release", () => {
@@ -455,7 +457,8 @@ describe("npmPkgToFlatpakSources", () => {
     );
 
     expect(sources).toHaveLength(1);
-    expect(sources[0]["dest-filename"]).toBe("lodash@4.17.23.tgz");
+    expect(sources[0]["dest-filename"]).toBe("package.tgz");
+    expect(sources[0].dest).toBe("bun_cache/lodash@4.17.23@@@1");
   });
 });
 
